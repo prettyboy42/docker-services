@@ -1,0 +1,64 @@
+version: '3.9'
+
+services:
+  redis:
+    container_name: redistimeseries
+    image: redislabs/redistimeseries:latest
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf", "--loadmodule", "/usr/lib/redis/modules/redistimeseries.so"]
+    ports:
+      - '6379:6379'
+    network_mode: "host"
+    # Uncomment and edit the local path in the following line to have
+    # Redis' data persisted to the host's filesystem.
+    volumes:
+      - ./redis/data:/data
+      - ./redis/conf:/usr/local/etc/redis
+
+  prometheus:
+    image: "prom/prometheus:master"
+    command: ["--config.file=/prometheus.yml"]
+    volumes:
+      - ./prometheus.yaml:/prometheus.yml
+    ports:
+      - 9090:9090
+    network_mode: "host"
+    depends_on:
+      - redis
+
+  adapter:
+    image: "redislabs/prometheus-redistimeseries-adapter:master"
+    command: ["--redis-address", "localhost:6379", "--web.listen-address", "0.0.0.0:9201", "--send-timeout", "60s", "--log.level", "info"]
+    network_mode: "host"
+    depends_on:
+      - redis
+
+  grafana:
+    container_name: grafana
+    # image: grafana/grafana:latest
+    image: grafana-custom:latest
+    ports:
+      - '3000:3000'
+    network_mode: "host"
+    user: '472'
+    environment:
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_AUTH_BASIC_ENABLED=true
+      - GF_ENABLE_GZIP=true
+      # - GF_INSTALL_PLUGINS=redis-app,redis-datasource,grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - ./grafana/config.ini:/etc/grafana/config.ini
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/data:/var/lib/grafana
+    depends_on:
+      - redis
+      
+  redisinsight:
+    container_name: redisinsight
+    image: redislabs/redisinsight:latest
+    ports:
+      - '8001:8001'
+    network_mode: "host"
+    volumes:
+      - ./redisinsight:/db
+

@@ -1,0 +1,30 @@
+apiVersion: 1
+
+datasources:
+  - name: Redis Local
+    type: redis-datasource
+    access: proxy
+    orgId: 1
+    isDefault: false
+    version: 1
+    # url: redis://172.19.0.2:6379
+    url: redis://localhost:6379
+    jsonData:
+      poolSize: 5
+      timeout: 10
+      pingInterval: 0
+      pipelineWindow: 0
+    editable: true
+  - name: Redis DEV
+    type: redis-datasource
+    access: proxy
+    orgId: 1
+    isDefault: false
+    version: 1
+    url: redis://10.30.19.200:6379
+    jsonData:
+      poolSize: 5
+      timeout: 10
+      pingInterval: 0
+      pipelineWindow: 0
+    editable: true
